@@ -1,0 +1,111 @@
+let angleX = 0;
+let angleY = 0;
+let cylinderRadius = 100;
+let cylinderHeight = 300;
+let sliceAngle = 180; // Initial slice angle (half of the cylinder)
+let zPos = 0; // Position of the stickman inside the cylinder
+let lastMouseX, lastMouseY;
+
+// Create input elements for controlling the top and bottom positions of the extruded cylinder
+let topInput, bottomInput, sliceAngleInput;
+
+function setup() {
+  createCanvas(600, 600, WEBGL);
+
+  // Create input for controlling the top position of the extruded cylinder
+  topInput = createInput(cylinderHeight / 2);
+  topInput.position(20, height + 20);
+  topInput.size(100, 20);
+  topInput.input(updateExtrude);
+
+  // Create input for controlling the bottom position of the extruded cylinder
+  bottomInput = createInput(-cylinderHeight / 2);
+  bottomInput.position(140, height + 20);
+  bottomInput.size(100, 20);
+  bottomInput.input(updateExtrude);
+
+  // Create an HTML text input for slice angle control
+  sliceAngleInput = createInput(sliceAngle.toString());
+  sliceAngleInput.position(260, height + 20);
+  sliceAngleInput.size(100, 20);
+  sliceAngleInput.input(updateSliceAngle);
+}
+
+function draw() {
+  background(200);
+  rotateX(angleX);
+  rotateY(angleY);
+
+  drawExtrudedCylinderWithCut();
+
+  push();
+  translate(0, zPos, 0);
+  drawStickman();
+  pop();
+}
+
+function drawExtrudedCylinderWithCut() {
+  push();
+  noFill();
+  stroke(0, 255, 0);
+  strokeWeight(2);
+  rotateX(HALF_PI);
+
+  for (let angle = radians(-sliceAngle / 2); angle <= radians(sliceAngle / 2); angle += 0.1) {
+    let x = cylinderRadius * cos(angle);
+    let y = cylinderRadius * sin(angle);
+    line(x, y, float(bottomInput.value()), x, y, float(topInput.value()));
+  }
+
+  fill(0, 255, 0, 50);
+  noStroke();
+  arc(0, 0, cylinderRadius * 2, cylinderRadius * 2, radians(-sliceAngle / 2), radians(sliceAngle / 2));
+
+  pop();
+}
+
+function drawStickman() {
+  push();
+  stroke(0);
+  strokeWeight(2);
+  fill(255, 0, 0);
+  ellipse(0, -30, 20, 20);
+  line(0, -20, 0, 20);
+  line(-10, 10, 10, 10);
+  line(-10, 40, 0, 20);
+  line(10, 40, 0, 20);
+  pop();
+}
+
+function updateSliceAngle() {
+  let newSliceAngle = float(sliceAngleInput.value());
+  sliceAngle = constrain(newSliceAngle, 0, 360);
+}
+
+function updateExtrude() {
+  let newTop = float(topInput.value());
+  let newBottom = float(bottomInput.value());
+  if (newTop > newBottom) {
+    cylinderHeight = newTop - newBottom;
+  }
+}
+
+function mousePressed() {
+  lastMouseX = mouseX;
+  lastMouseY = mouseY;
+}
+
+function mouseDragged() {
+  angleY += (mouseX - lastMouseX) * 0.01;
+  angleX -= (mouseY - lastMouseY) * 0.01;
+  lastMouseX = mouseX;
+  lastMouseY = mouseY;
+}
+
+function keyPressed() {
+  if (keyCode === UP_ARROW) {
+    zPos -= 10;
+  } else if (keyCode === DOWN_ARROW) {
+    zPos += 10;
+  }
+}
